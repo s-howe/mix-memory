@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 from mix_memory.plotting import visualize_connections, visualize_network
+from typing import List, Union, Optional, Dict
+import networkx as nx
 
 
 class Track:
@@ -10,6 +12,12 @@ class Track:
         if artist is None:
             self.artist, self.title = self.infer_artist()
         self.connections = []
+
+    @classmethod
+    def from_file(cls, file_name: str | Path) -> list['Track']:
+        """Initialize the Track instance from a file."""
+        # TODO
+        pass
 
     def __repr__(self) -> str:
         return f'Track({self.track_id}, {self.title}, {self.artist})'
@@ -22,106 +30,205 @@ class Track:
         if ' - ' in self.title:
             return self.title.split(' - ')
         return 'Unknown', self.title
+    
+
+class TrackCollection:
+    def __init__(self, tracks) -> None:
+        self.tracks = tracks
+
+    @classmethod
+    def from_json_file(cls, file_name: str | Path) -> 'TrackCollection':
+        """Initialize the TrackCollection instance from a JSON file."""
+        with open(file_name, 'r') as f:
+            tracks = json.load(f)
+        return cls(tracks)
+    
+    @classmethod
+    def from_m3u_file(cls, file_path: str | Path) -> 'TrackCollection':
+        """Load a TrackCollection from an m3u file."""
+        tracks = []
+        with open(file_path, 'r') as f:
+            lines = f.readlines()
+            track_id = 1
+            for line in lines:
+                line = line.strip()
+                if line and not line.startswith('#'):
+                    # For simplicity, assume that the file path contains the title and artist info
+                    # in the format: "Artist - Title.mp3"
+                    file_path = Path(line)
+                    title, ext = file_path.stem.rsplit(' - ', 1)
+                    artist = None  # You can extract artist info if available in the file path
+                    track = Track(track_id, title, artist)
+                    tracks.append(track)
+                    track_id += 1
+
+        return cls(tracks)
+    
+    def to_json(self, file_name: str | Path = None) -> None:
+        """Save the track collection to a JSON file or string."""
+        json_serialize(self.tracks, file_name)
+
+    def __repr__(self) -> str:
+        return f'TrackCollection({self.tracks})'
+    
+    def __str__(self) -> str:
+        if len(self.tracks) > 3:
+            return f'TrackCollection({self.tracks[:3]}...)'
+        return f'TrackCollection({self.tracks})'
+    
+    def __iter__(self):
+        return iter(self.tracks)
+    
+    def __getitem__(self, id):
+        return self.get_track(id)
+    
+    def __len__(self):
+        return len(self.tracks)
+    
+    def add_track(self, track: Track) -> None:
+        """Add a track to the track collection."""
+        self.tracks.append(track)
+    
+    def remove_track(self, track_id: int) -> None:
+        """Remove a track from the track collection."""
+        self.tracks = [track for track in self.tracks if track.track_id != track_id]
+
+    def get_track(self, track_id: int) -> Track:
+        """Get a track from the track collection."""
+        return [track for track in self.tracks if track.track_id == track_id][0]    
+    
+    def get_track_from_title(self, title: str) -> Track:
+        """Get the track from a track title."""
+        for track in self.tracks:
+            if track.title == title:
+                return track
+        return None
+    
+    def get_track_from_artist_title(self, artist: str, title: str) -> Track:
+        """Get the track from a track artist and title."""
+        for track in self.tracks:
+            if track.artist == artist and track.title == title:
+                return track
+        return None
+    
 
 class TrackNetwork:
-    def __init__(self) -> None:
-        """Initialize the network. 
-        
-        The network is represented as a dictionary of tracks, where the key is
-        the track id and the value is a Track object.
-        
-        The Track object has the following attributes:
-        - track_id: the track id
-        - title: the title of the track
-        - artist: the artist of the track
-        - connections: a list of tuples, where each tuple contains the track id
-          of a connected track and the strength of the connection
-        """
-        self.tracks = {}
+    def __init__(self, track_collection: TrackCollection, 
+                       connections: Optional[Dict[int, List[int]]] = None) -> None:
+        self.track_collection = track_collection
+        self.graph = self.create_networkx_graph(connections)
 
-    def add_track(self, track_id: int, title: str, artist: str = None):
-        """Add a track to the network."""
-        if track_id not in self.tracks:
-            self.tracks[track_id] = Track(track_id, title, artist)
-        return self.tracks[track_id]
-
-    def add_connection(self, 
-                       track_id1: int, 
-                       track_id2: int, 
-                       direction: str = 'both',
-                       strength: int = 3) -> None:
-        """Add a connection between two tracks.
-
-        The direction of the connection can be 'both' or 'forward'.
-        
-        The strength of the connection is a number between 1 and 3, where 1 is
-        a weak connection and 3 is a strong connection."""
-        if track_id1 in self.tracks and track_id2 in self.tracks:
-            self.tracks[track_id1].connections.append((track_id2, strength))
-            if direction == 'both':
-                self.tracks[track_id2].connections.append((track_id1, strength))
-
-    def add_connection_from_string(self, 
-                                   connection: str, 
-                                   strength: int = 3) -> None:
-        """Add a connection from a string."""
-
-        # Split the connection string into two track titles.
-        direction_mapping = {' <-> ': 'both', ' -> ': 'forward'}
-        for delimiter in direction_mapping:
-            if delimiter in connection:
-                direction = direction_mapping[delimiter]
-                title1, title2 = connection.split(delimiter)
-                break
-        else:
-            raise ValueError('Invalid connection string.')
-        
-        # Find the track ids of the two tracks.
-        track_id1 = self.get_id_from_title(title1)
-        track_id2 = self.get_id_from_title(title2)
-        if track_id1 is None:
-            track1 = self.add_track(len(self.tracks), title1)
-            track_id1 = track1.track_id
-        if track_id2 is None:
-            track2 = self.add_track(len(self.tracks), title2)
-            track_id2 = track2.track_id
-        
-        # Add the connection.
-        self.add_connection(track_id1, track_id2, direction, strength)
-
-    def get_id_from_title(self, title: str) -> int:
-        """Get the track id from a track title."""
-        for track_id, track in self.tracks.items():
-            if track.title in (title, title.split(' - ')[-1]):
-                return track_id
-        return None
-
-    def get_connected_songs(self, track_id: int) -> list[int]:
-        """Get all songs connected to a given song."""
-        if track_id in self.tracks:
-            return self.tracks[track_id].connections
-        return []
+    @classmethod
+    def from_json_file(cls, file_name: str | Path) -> 'TrackNetwork':
+        """Initialize the TrackNetwork instance from a JSON file."""
+        with open(file_name, 'r') as f:
+            graph_json = json.load(f)
+        graph = nx.node_link_graph(graph_json)
+        track_collection = cls.create_track_collection(graph)
+        return cls(track_collection, graph)
     
-    def visualize_network(self, depth: int = 1) -> None:
-        """Visualize the network."""
-        visualize_network(self, depth)
+    @classmethod
+    def create_track_collection(cls, graph: nx.DiGraph) -> TrackCollection:
+        """Create a TrackCollection instance from a NetworkX directional graph."""
+        tracks = []
+        for node, data in graph.nodes(data=True):
+            track_id = node
+            title = data['title']
+            artist = data['artist']
+            track = Track(track_id, title, artist)
+            tracks.append(track)
+        return TrackCollection(tracks)
 
-    def visualize_connections(self, track_id: int, depth: int = 1) -> None:
+    def create_networkx_graph(self, 
+                              connections: Optional[Dict[int, List[int]]] = None) -> nx.DiGraph:
+        """
+        Create a NetworkX directional graph from the TrackCollection instance.
+
+        Parameters:
+            connections (Optional[Dict[int, List[int]]]): A dictionary representing the connections
+                                                          between tracks. If not provided, the
+                                                          connections will be inferred from the
+                                                          TrackCollection instance.
+
+        Returns:
+            nx.DiGraph: A directional graph representing the tracks.
+        """
+        graph = nx.DiGraph()
+        
+        # Add nodes to the graph
+        for track in self.track_collection.tracks:
+            graph.add_node(track.track_id)
+
+        # Add edges to the graph
+        if connections is None:
+            connections = {track.track_id: track.connections 
+                           for track in self.track_collection.tracks}
+        
+        for track_id, track_connections in connections.items():
+            for neighbor_id, strength in track_connections:
+                graph.add_edge(track_id, neighbor_id, strength=strength)
+
+        return graph
+    
+    def add_connection(self, source_track_id: int, target_track_id: int, 
+                       strength: int = 1) -> None:
+        """Add a connection between two tracks."""
+        if source_track_id in self.graph.nodes and target_track_id in self.graph.nodes:
+            self.graph.add_edge(source_track_id, target_track_id, strength=strength)
+        else:
+            raise ValueError(f'Invalid track ID: {source_track_id} or {target_track_id}')
+        
+    def remove_connection(self, source_track_id: int, target_track_id: int) -> None:
+        """Remove a connection between two tracks."""
+        if source_track_id in self.graph.nodes and target_track_id in self.graph.nodes:
+            self.graph.remove_edge(source_track_id, target_track_id)
+        else:
+            raise ValueError(f'Invalid track ID: {source_track_id} or {target_track_id}')
+        
+    def save_connections(self, file_name: str | Path) -> None:
+        """Save the connections to a JSON file."""
+        connections = {}
+        for track_id in self.graph.nodes:
+            connections[track_id] = self.graph[track_id]
+        json_serialize(connections, file_name)
+
+    def get_shortest_path(self, source_track: int, target_track: int) -> List[int]:
+        """
+        Get the shortest path between two tracks.
+
+        Parameters:
+            source_track (int): The ID of the source track.
+            target_track (int): The ID of the target track.
+
+        Returns:
+            List[int]: A list of track IDs representing the shortest path from source to target.
+                       If no path is found, an empty list will be returned.
+        """
+        if nx.has_path(self.graph, source_track, target_track):
+            return nx.shortest_path(self.graph, source_track, target_track)
+        else:
+            return []
+        
+    def visualize_network(self, save_path: str | Path = None) -> None:
+        """Visualize the network."""
+        visualize_network(self.graph, save_path)
+
+    def visualize_connections(self, track_id: int, 
+                              save_path: str | Path = None) -> None:
         """Visualize the connections of a given song."""
         if track_id in self.tracks:
-            visualize_connections(self, track_id, depth)
+            visualize_connections(self.graph, track_id, save_path)
 
-    def print_network(self, depth: int = 1) -> None:
-        """Print the network."""
-        for track_id in self.tracks:
-            print(self.tracks[track_id])
-            for connected_track_id, strength in self.get_connected_songs(track_id):
-                print(f'  {self.tracks[connected_track_id]} ({strength})')
-                if depth > 1:
-                    for connected_track_id2, strength2 in self.get_connected_songs(connected_track_id):
-                        print(f'    {self.tracks[connected_track_id2]} ({strength2})')
+    def to_json(self, file_name: str | Path = None) -> None:
+        """Save the network to a JSON file or string."""
+        graph_json = nx.node_link_data(self.graph)
+        json_serialize(graph_json, file_name)
 
-    def to_json(self, file_name: str | Path) -> str:
-        """Convert the network to a JSON string."""
-        with open(file_name, 'w') as json_file:
-            json.dump(self.tracks, json_file, indent=4)
+
+def json_serialize(obj, file_name: str | Path = None):
+    """Serialize an object to JSON."""
+    if file_name is None:
+        return json.dumps(obj)
+    else:
+        with open(file_name, 'w') as f:
+            json.dump(obj, f)
