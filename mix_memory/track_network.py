@@ -1,4 +1,5 @@
 import networkx as nx
+from pydantic import BaseModel, ValidationError
 
 from mix_memory.library import Library
 
@@ -12,15 +13,16 @@ class TrackIdConnections(list):
         """Initialize the TrackIDConnections object.
 
         Raises:
-            ValueError: if passed object is not a list of 2-element tuples with both
-                elements being integers.
+            ValidationError: if passed object is not an iterable of 2-element tuples
+                with both elements being integers.
         """
-        if not (
-            all(isinstance(i, tuple) for i in l)
-            and all(len(i) == 2 for i in l)
-            and all(all(isinstance(j, int) for j in i) for i in l)
-        ):
-            raise ValueError("All list items must be a tuple with two integers.")
+
+        # Validate given list
+        class TrackConnectionModel(BaseModel):
+            connection: tuple[int, int]
+
+        for i in l:
+            TrackConnectionModel(connection=i)
 
         super().__init__(l)
 
