@@ -6,7 +6,6 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from mix_memory.track_network import TrackNetwork
-from mix_memory.library import Library
 
 
 class D3NetworkData:
@@ -47,18 +46,18 @@ class D3NetworkData:
             nodes: list[Node]
             links: list[Link]
 
+        # Test against the schema
         NetworkDictSchema(**network_dict)
 
         self.network_dict = network_dict
 
     @classmethod
-    def from_track_network_and_library(
-        cls, track_network: TrackNetwork, library: Library
-    ):
+    def from_track_network(cls, track_network: TrackNetwork) -> "D3NetworkData":
+        """Loads the D3NetworkData from a TrackNetwork."""
         return cls(
             {
                 "nodes": [
-                    {"id": track_id, "name": str(library[track_id])}
+                    {"id": track_id, "name": str(track_network.library[track_id])}
                     for track_id in track_network.track_ids
                 ],
                 "links": [
@@ -68,6 +67,10 @@ class D3NetworkData:
             }
         )
 
-    def to_json(self, file_path: Path) -> None:
+    def to_json(self, file_path: str | Path) -> None:
+        """Write the data to JSON."""
+        if isinstance(file_path, str):
+            file_path = Path(file_path)
+
         with file_path.open("w") as fp:
             json.dump(self.network_dict, fp, indent=4)

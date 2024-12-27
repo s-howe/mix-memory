@@ -32,8 +32,9 @@ class TrackNetwork:
     node, and each connection is an edge on the network graph. These are stored in a
     NetworkX DiGraph."""
 
-    def __init__(self, graph: nx.DiGraph) -> None:
+    def __init__(self, graph: nx.DiGraph, library: Library) -> None:
         self._graph = graph
+        self.library = library
 
     def __repr__(self) -> str:
         return f"TrackNetwork({self.n_tracks} tracks, {self.n_connections} connections)"
@@ -69,7 +70,7 @@ class TrackNetwork:
             for track_id, neighbor_id in connections:
                 graph.add_edge(track_id, neighbor_id)
 
-        return cls(graph=graph)
+        return cls(graph=graph, library=library)
 
     @classmethod
     def from_library(cls, library: Library) -> "TrackNetwork":
