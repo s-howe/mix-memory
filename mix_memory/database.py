@@ -37,7 +37,6 @@ class DBData:
         result_list = [dict(zip(colname, r)) for r in query.fetchall()]
         cur.close()
         cur.connection.close()
-        print(result_list)
 
         return cls(rows=result_list)
 
