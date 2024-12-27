@@ -6,7 +6,7 @@ const height = window.innerHeight;
 const svg = d3.select("#force-graph");
 
 // Load the JSON data using d3.json()
-d3.json("network.json").then(graphData => {
+d3.json("track_network.json").then(graphData => {
     // Create the force simulation
     const simulation = d3.forceSimulation(graphData.nodes)
         .force("link", d3.forceLink(graphData.links).id(d => d.id).distance(80))
