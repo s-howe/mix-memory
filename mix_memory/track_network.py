@@ -122,3 +122,8 @@ class TrackNetwork:
                 raise ValueError(f"Track ID does not exist: {track_id}")
 
         self._graph.remove_edge(source_track_id, target_track_id)
+
+    def get_connected_track_ids(self, source_track_id: int) -> list[int]:
+        """Return the list of connections from a source track ID."""
+        neighbours = self._graph.adj[source_track_id]
+        return list(neighbours)
