@@ -1,0 +1,36 @@
+body {
+    font-family: Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+svg {
+    width: 100vw;
+    height: 100vh;
+    background-color: #342e2e;
+}
+
+.node {
+    cursor: pointer;
+    fill: #1f77b4;
+    stroke: #fff;
+    stroke-width: 1.5px;
+}
+
+.link {
+    fill: none;
+    stroke: #888;
+    stroke-width: 1px;
+}
+
+.node:hover {
+    fill: orange;
+}
+
+text {
+    font-size: 15px;
+    font-weight: lighter;
+    fill: #d1d0d0;
+    pointer-events: none;
+    user-select: none;
+}
