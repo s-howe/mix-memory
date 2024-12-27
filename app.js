@@ -9,8 +9,8 @@ const svg = d3.select("#force-graph");
 d3.json("network.json").then(graphData => {
     // Create the force simulation
     const simulation = d3.forceSimulation(graphData.nodes)
-        .force("link", d3.forceLink(graphData.links).id(d => d.id).distance(100))
-        .force("charge", d3.forceManyBody().strength(-200))
+        .force("link", d3.forceLink(graphData.links).id(d => d.id).distance(80))
+        .force("charge", d3.forceManyBody().strength(-100))
         .force("center", d3.forceCenter(width / 2, height / 2));
 
     // Create links
@@ -51,7 +51,7 @@ d3.json("network.json").then(graphData => {
 
     // Drag functions
     function dragstart(event, d) {
-        if (!event.active) simulation.alphaTarget(0.3).restart();
+        if (!event.active) simulation.alphaTarget(0.01).restart();
         d.fx = d.x;
         d.fy = d.y;
     }
