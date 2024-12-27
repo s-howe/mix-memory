@@ -105,3 +105,9 @@ class Library:
             if track.artist == artist and track.title == title:
                 return track_id
         return None
+
+    def get_track_id_from_track(self, track: Track) -> int:
+        """Get the track ID from a track object."""
+        return self.get_track_id_from_artist_title(
+            artist=track.artist, title=track.title
+        )
