@@ -25,7 +25,7 @@ class Track:
     def hash(self) -> int:
         """Hash the track, on the basis that a track is described by a unique key of
         {artist,title}."""
-        return hash(self.artist + self.title)
+        return abs(hash(self.artist + self.title)) % (10**8)
 
 
 class MissingTrackError(Exception):
@@ -65,8 +65,8 @@ class Library:
             lines = f.readlines()
             extinf_lines = [l for l in lines if l.startswith("#EXTINF")]
             for line in extinf_lines:
-                title_artist = line.split(",")[1]
-                title, artist = title_artist.split(" - ")
+                title_artist = line.split(",", 1)[1]
+                title, artist = title_artist.split(" - ", 1)
                 track_list.append(Track(title, artist))
 
         return cls.from_track_list(track_list=track_list)
