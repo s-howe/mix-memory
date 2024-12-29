@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from pathlib import Path
 import re
 from mix_memory.library import Library, Track, merge_libraries
@@ -89,7 +89,7 @@ class RekordboxHistoryPlaylist(Library):
 
 
 def load_rekordbox_histories_since(
-    rekordbox_histories_dir: str | Path, min_date: datetime.date
+    rekordbox_histories_dir: str | Path, min_date: date | None = None
 ) -> list[RekordboxHistoryPlaylist]:
     """Load multiple history playlists since a given date.
 
@@ -99,16 +99,29 @@ def load_rekordbox_histories_since(
         min_date: The minimum date from which history files should be read.
     """
     # Force path if str is given
-    rekordbox_histories_dir = Path(rekordbox_histories_dir)
+    if isinstance(rekordbox_histories_dir, str):
+        rekordbox_histories_dir = Path(rekordbox_histories_dir)
+
+    # Force date if datetime is given
+    if isinstance(min_date, datetime):
+        min_date = min_date.date()
 
     rekordbox_history_files = [
         RekordboxHistoryM3UFile(f) for f in rekordbox_histories_dir.glob("*.m3u8")
     ]
 
-    files_after_min_date = [f for f in rekordbox_history_files if f.date >= min_date]
+    if min_date is not None:
+        rekordbox_history_files = [
+            f for f in rekordbox_history_files if f.date >= min_date
+        ]
+
+    if len(rekordbox_history_files) == 0:
+        raise ValueError(
+            "No files were found to match the criteria. Consider a longer date range."
+        )
 
     playlists = [
-        RekordboxHistoryPlaylist.from_m3u_file(f.path) for f in files_after_min_date
+        RekordboxHistoryPlaylist.from_m3u_file(f.path) for f in rekordbox_history_files
     ]
 
     return playlists
