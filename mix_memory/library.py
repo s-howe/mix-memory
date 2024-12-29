@@ -90,6 +90,7 @@ class Library:
         """
         if track in self.tracks.values():
             raise DuplicateTrackError(f"Track already exists in library: {track}")
+
         if track_id is None:
             track_id = max(self.tracks.keys()) + 1
         elif track_id in self.tracks.keys():
