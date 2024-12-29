@@ -39,10 +39,19 @@ def cli(ctx: click.Context, db_name: str):
 
 
 @cli.command()
+@click.option(
+    "--force", is_flag=True, help="Force recreation without asking for confirmation."
+)
 @click.pass_context
-def initdb(ctx: click.Context) -> None:
+def initdb(ctx: click.Context, force: bool) -> None:
     """Drop existing database and recreate with empty tables."""
     db_name = ctx.obj["db_name"]
+
+    if not force:
+        click.confirm(
+            f"Are you sure you want to reset the database {db_name}?", abort=True
+        )
+
     Database(name=db_name).create_tables()
     click.echo(f"Database {db_name} has been recreated.")
 
