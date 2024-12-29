@@ -93,6 +93,12 @@ class Library:
     def __len__(self) -> int:
         return len(self.track_map)
 
+    def tracks(self) -> list[Track]:
+        return list(self.track_map.values())
+
+    def track_ids(self) -> list[int]:
+        return list(self.track_map.keys())
+
     def add_track(self, track: Track) -> None:
         """Add a track to the library.
 
