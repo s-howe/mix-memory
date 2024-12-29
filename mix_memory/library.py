@@ -18,6 +18,17 @@ class Track:
     def __str__(self) -> str:
         return f"{self.artist} - {self.title}"
 
+    def __eq__(self, other: "Track") -> bool:
+        return self.artist == other.artist and self.title == other.title
+
+
+class MissingTrackError(Exception):
+    pass
+
+
+class DuplicateTrackError(Exception):
+    pass
+
 
 class Library:
     """A collection of music tracks. Tracks are stored in a dictionary with track IDs
@@ -74,13 +85,15 @@ class Library:
                 incremented from the current max track ID.
 
         Raises:
-            ValueError: if track ID already exists in library.
+            DuplicateTrackError: if track already exists in library.
+            ValueError: if given track ID already exists in library.
         """
-        if track_id in self.tracks.keys():
-            raise ValueError(f"Track ID already exists in library: {track_id}")
-
+        if track in self.tracks.values():
+            raise DuplicateTrackError(f"Track already exists in library: {track}")
         if track_id is None:
             track_id = max(self.tracks.keys()) + 1
+        elif track_id in self.tracks.keys():
+            raise ValueError(f"Track ID already exists in library: {track_id}")
 
         self.tracks[track_id] = track
 
@@ -88,10 +101,10 @@ class Library:
         """Remove a track from the library.
 
         Raises:
-            KeyError: if track ID does not exist in the library.
+            MissingTrackError: if track ID does not exist in the library.
         """
         if track_id not in self.tracks.keys():
-            raise ValueError(f"Track ID not in library: {track_id}")
+            raise MissingTrackError(f"Track ID not in library: {track_id}")
 
         del self.tracks[track_id]
 
@@ -100,11 +113,17 @@ class Library:
         return self[track_id]
 
     def get_track_id_from_artist_title(self, artist: str, title: str) -> int:
-        """Get the track ID from a track artist and title."""
+        """Get the track ID from a track artist and title.
+
+        Raises:
+            MissingTrackError: if track artist and title doe not exist in library.
+        """
         for track_id, track in self.tracks.items():
             if track.artist == artist and track.title == title:
                 return track_id
-        return None
+        else:
+            t = Track(artist, title)
+            raise MissingTrackError(f"Track does not exist in library: {t}")
 
     def get_track_id_from_track(self, track: Track) -> int:
         """Get the track ID from a track object."""
