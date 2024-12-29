@@ -72,7 +72,7 @@ class Library:
 
         with file_path.open("r") as f:
             lines = f.readlines()
-            extinf_lines = [l for l in lines if l.startswith("#EXTINF")]
+            extinf_lines = [l.strip() for l in lines if l.startswith("#EXTINF")]
             for line in extinf_lines:
                 title_artist = line.split(",", 1)[1]
                 title, artist = title_artist.split(" - ", 1)
@@ -165,6 +165,7 @@ class Library:
 
 def merge_libraries(libraries: list[Library]) -> Library:
     """Merge many libraries into one."""
+    libraries = libraries.copy()
     library = libraries.pop()
 
     for other in libraries:
