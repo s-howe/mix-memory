@@ -1,5 +1,4 @@
 from pathlib import Path
-import hashlib
 
 
 __all__ = ["Track", "Library"]
@@ -162,3 +161,13 @@ class Library:
         merged_track_map = self.track_map.copy()
         merged_track_map.update(other.track_map)
         return Library(track_map=merged_track_map)
+
+
+def merge_libraries(libraries: list[Library]) -> Library:
+    """Merge many libraries into one."""
+    library = libraries.pop()
+
+    for other in libraries:
+        library = library.extend(other)
+
+    return library
