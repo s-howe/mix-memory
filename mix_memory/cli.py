@@ -1,9 +1,13 @@
+from pathlib import Path
+from datetime import datetime
+
 import click
 
-from mix_memory.library import Track
-from mix_memory.database import Database, LibraryData, ConnectionsData
-from mix_memory.track_network import TrackNetwork
 from mix_memory.d3_network_data import D3NetworkData
+from mix_memory.database import Database, LibraryData, ConnectionsData
+from mix_memory.library import Track, merge_libraries
+from mix_memory.track_network import TrackNetwork
+from mix_memory.rekordbox import load_rekordbox_histories_since
 
 
 def load_track_network_from_db(db_name: str) -> TrackNetwork:
@@ -146,3 +150,48 @@ def export_network_for_d3(ctx: click.Context, output_file: str) -> None:
     track_network = load_track_network_from_db(db_name)
     D3NetworkData.from_track_network(track_network).to_json(file_path=output_file)
     click.echo(f"Track network exported to {output_file}")
+
+
+@cli.command()
+@click.option(
+    "--rekordbox-histories-dir",
+    default="./rekordbox_histories",
+    show_default=True,
+    help="The directory from which Rekordbox history exported as .m3u8 files should be read.",
+)
+@click.option(
+    "--min-date",
+    type=click.DateTime(formats=["%Y-%m-%d"]),
+    help="The minimum date to read Rekordbox history playlists from. Optional.",
+)
+@click.pass_context
+def load_network_from_rekordbox_histories(
+    ctx: click.Context, rekordbox_histories_dir: str, min_date: datetime.date
+) -> None:
+    db_name = ctx.obj["db_name"]
+    playlists = load_rekordbox_histories_since(
+        rekordbox_histories_dir=Path(rekordbox_histories_dir), min_date=min_date
+    )
+
+    library = merge_libraries(playlists)
+    track_network = TrackNetwork.from_library(library)
+
+    click.echo(f"Loaded {len(playlists)} playlists into library.")
+
+    for playlist in playlists:
+        click.echo(
+            f"\nBeginning transitions survey: {playlist.name}"
+            "\nPlease mark the good transitions from memory.\n"
+        )
+        for start_track, end_track in playlist.transitions():
+            if click.confirm(f"{start_track} -> {end_track}?"):
+                source_track_id = track_network.library.get_track_id_from_track(
+                    start_track
+                )
+                target_track_id = track_network.library.get_track_id_from_track(
+                    end_track
+                )
+                track_network.add_connection(source_track_id, target_track_id)
+
+    if click.confirm(f"Save network to database {db_name}?"):
+        save_track_network_to_db(track_network, db_name=db_name)
