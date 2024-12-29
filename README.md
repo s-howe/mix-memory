@@ -22,10 +22,19 @@ bidirectional (mixing in both directions works well).
 
 ## Installation
 
-To install the Python package, run
+To install the Python package and CLI, run
 
 ``` sh
 pip install .
+```
+
+## Command Line Interface
+
+All functions of mix-memory are exposed via a command-line interface. See the various
+commands by running
+
+``` sh
+mix-memory --help
 ```
 
 ## Examples
