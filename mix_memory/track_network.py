@@ -4,6 +4,9 @@ from pydantic import BaseModel, ValidationError
 from mix_memory.library import Library
 
 
+__all__ = ["TrackIdConnections", "TrackNetwork"]
+
+
 class TrackIdConnections(list):
     """A class to represent connections between pairs of tracks. These connections are
     stored as a list of tuples, each holding two track IDs (integers), the first being

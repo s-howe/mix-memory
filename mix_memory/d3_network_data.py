@@ -8,6 +8,9 @@ from pydantic import BaseModel
 from mix_memory.track_network import TrackNetwork
 
 
+__all__ = "D3NetworkData"
+
+
 class D3NetworkData:
     """Converts Python network objects into d3-friendly data in the form:
     { "nodes": [

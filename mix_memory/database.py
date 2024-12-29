@@ -5,6 +5,9 @@ from mix_memory.library import Library, Track
 from mix_memory.track_network import TrackIdConnections
 
 
+__all__ = ["Database", "LibraryData", "ConnectionsData"]
+
+
 class Database:
     def __init__(self, name: str | Path) -> None:
         if not name.endswith(".db"):
