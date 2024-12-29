@@ -146,4 +146,6 @@ class Library:
 
     def extend(self, other: "Library") -> "Library":
         """Merges one library with another library."""
-        return Library.track_map.update(other.track_map)
+        merged_track_map = self.track_map.copy()
+        merged_track_map.update(other.track_map)
+        return Library(track_map=merged_track_map)
