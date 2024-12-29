@@ -46,6 +46,9 @@ class Library:
         Args:
             track_hashmap: a dictionary with track IDs mapped to Track objects.
         """
+        if track_map is None:
+            track_map = {}
+
         self.track_map = track_map
 
     @classmethod
