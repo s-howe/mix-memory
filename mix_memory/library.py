@@ -111,3 +111,9 @@ class Library:
         return self.get_track_id_from_artist_title(
             artist=track.artist, title=track.title
         )
+
+    def extend(self, other: "Library") -> "Library":
+        """Merges one library with another library. All track IDs are regenerated."""
+        return Library.from_track_list(
+            list(self.tracks.values()) + list(other.tracks.values())
+        )
