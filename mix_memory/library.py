@@ -13,19 +13,26 @@ class Track:
         self.artist = artist
         self.title = title
 
+        # A simple 8-digit hash to use as a track ID
+        self.hash8 = abs(hash(self)) % (10**8)
+
     def __repr__(self) -> str:
         return f"Track(artist={self.artist}, title={self.title})"
 
     def __str__(self) -> str:
         return f"{self.artist} - {self.title}"
 
-    def __eq__(self, other: "Track") -> bool:
-        return self.artist == other.artist and self.title == other.title
+    @property
+    def __key(self) -> str:
+        return (self.artist, self.title)
 
-    def hash(self) -> int:
-        """Hash the track, on the basis that a track is described by a unique key of
-        {artist,title}."""
-        return abs(hash(self.artist + self.title)) % (10**8)
+    def __eq__(self, other: "Track") -> bool:
+        if isinstance(other, Track):
+            return self.__key == other.__key
+        raise NotImplementedError
+
+    def __hash__(self) -> int:
+        return hash(self.__key)
 
 
 class MissingTrackError(Exception):
@@ -40,7 +47,7 @@ class Library:
     """A collection of music tracks. Tracks are stored in a dictionary with track IDs
     as keys."""
 
-    def __init__(self, track_map: dict[int, Track]) -> None:
+    def __init__(self, track_map: dict[int, Track] | None) -> None:
         """Initialize the Library object.
 
         Args:
@@ -55,7 +62,7 @@ class Library:
     def from_track_list(cls, track_list: list[Track]) -> "Library":
         """Initialize the Library from a list of tracks. Track IDs are generated from
         the list position."""
-        track_map = {track.hash(): track for track in track_list}
+        track_map = {track.hash8: track for track in track_list}
         return cls(track_map=track_map)
 
     @classmethod
@@ -98,7 +105,7 @@ class Library:
         if track in self.track_map.values():
             raise DuplicateTrackError(f"Track already exists in library: {track}")
 
-        track_id = track.hash()
+        track_id = track.hash8
         self.track_map[track_id] = track
 
     def remove_track_by_id(self, track_id: int) -> None:
