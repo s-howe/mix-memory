@@ -57,13 +57,13 @@ class LibraryData(DBData):
     def from_library(cls, library: Library) -> "LibraryData":
         rows = [
             {"id": track_id, "artist": track.artist, "title": track.title}
-            for track_id, track in library.tracks.items()
+            for track_id, track in library.track_map.items()
         ]
         return cls(rows=rows)
 
     def to_library(self) -> Library:
         return Library(
-            tracks={
+            track_map={
                 row["id"]: Track(artist=row["artist"], title=row["title"])
                 for row in self.rows
             }

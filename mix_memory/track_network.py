@@ -65,7 +65,7 @@ class TrackNetwork:
         graph = nx.DiGraph()
 
         # Add nodes to the graph
-        for track_id in library.tracks.keys():
+        for track_id in library.track_map.keys():
             graph.add_node(track_id)
 
         # Add edges to graph
