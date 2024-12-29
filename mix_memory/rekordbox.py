@@ -38,18 +38,24 @@ class RekordboxHistoryM3UFile:
         self.date_file_number = match.group(3) if match.group(3) else 1
 
 
+# TODO: update repr and str
 class RekordboxHistoryPlaylist(Library):
     """A library specifically representing the tracks in a Rekordbox history
     playlist. Because a Rekordbox history playlist is ordered by the track play time,
     it serves as a good record of all the transitions a DJ made during a certain set."""
 
     def __init__(
-        self, track_map: dict[int, Track], date: datetime.date, date_file_number: int
+        self,
+        track_map: dict[int, Track],
+        name: str,
+        date: datetime.date,
+        date_file_number: int,
     ) -> None:
         """Initialize the RekordboxHistoryPlaylist from a track map and metadata. For a
         RekordboxHistoryPlaylist, the track map must be ordered sequentially according
         to when the track was played."""
         super().__init__(track_map=track_map)
+        self.name = name
         self.date = date
         self.date_file_number = date_file_number
 
@@ -67,6 +73,7 @@ class RekordboxHistoryPlaylist(Library):
 
         return cls(
             track_map=library.track_map,
+            name=file.name,
             date=file.date,
             date_file_number=file.date_file_number,
         )
