@@ -35,7 +35,7 @@ class RekordboxHistoryM3UFile:
         # Extract variables from regex groups
         date_str = match.group(1)
         self.date = datetime.strptime(date_str, "%Y-%m-%d").date()
-        self.date_file_number = match.group(3) if match.group(3) else 1
+        self.date_file_number = match.group(3) if match.group(3) else 0
 
 
 # TODO: update repr and str
@@ -119,6 +119,11 @@ def load_rekordbox_histories_since(
         raise ValueError(
             "No files were found to match the criteria. Consider a longer date range."
         )
+
+    # Sort files by date and file number
+    rekordbox_history_files = sorted(
+        rekordbox_history_files, key=lambda f: str(f.date) + str(f.date_file_number)
+    )
 
     playlists = [
         RekordboxHistoryPlaylist.from_m3u_file(f.path) for f in rekordbox_history_files
