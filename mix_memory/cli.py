@@ -47,7 +47,7 @@ def cli(ctx: click.Context, db_name: str):
     "--force", is_flag=True, help="Force recreation without asking for confirmation."
 )
 @click.pass_context
-def initdb(ctx: click.Context, force: bool) -> None:
+def init_db(ctx: click.Context, force: bool) -> None:
     """Drop existing database and recreate with empty tables."""
     db_name = ctx.obj["db_name"]
 
@@ -107,10 +107,9 @@ def add_connection(
 @click.argument("track_artist")
 @click.argument("track_title")
 @click.pass_context
-def recommend_next_tracks(
-    ctx: click.Context, track_artist: str, track_title: str
-) -> None:
-    """Recommend the next tracks from a given track based on saved transitions."""
+def next_track_options(ctx: click.Context, track_artist: str, track_title: str) -> None:
+    """Recommend options for the next track from a given track based on saved
+    transitions."""
     db_name = ctx.obj["db_name"]
     track_network = load_track_network_from_db(db_name)
 
@@ -165,7 +164,7 @@ def export_network_for_d3(ctx: click.Context, output_file: str) -> None:
     help="The minimum date to read Rekordbox history playlists from. Optional.",
 )
 @click.pass_context
-def load_network_from_rekordbox_histories(
+def load_track_network_from_rekordbox_histories(
     ctx: click.Context, rekordbox_histories_dir: str, min_date: datetime.date
 ) -> None:
     db_name = ctx.obj["db_name"]
