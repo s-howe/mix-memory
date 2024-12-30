@@ -164,7 +164,10 @@ def export_network_for_d3(ctx: click.Context, output_file: str) -> None:
 @click.option(
     "--min-date",
     type=click.DateTime(formats=["%Y-%m-%d"]),
-    help="The minimum date to read Rekordbox history playlists from. Optional.",
+    help=(
+        "The minimum date to read Rekordbox history playlists from. Format YYYY-MM-DD. "
+        "Optional."
+    ),
 )
 @click.pass_context
 def load_track_network_from_rekordbox_histories(
@@ -197,7 +200,10 @@ def load_track_network_from_rekordbox_histories(
 @click.option(
     "--min-date",
     type=click.DateTime(formats=["%Y-%m-%d"]),
-    help="The minimum date to read Rekordbox history playlists from. Optional.",
+    help=(
+        "The minimum date to read Rekordbox history playlists from. Format YYYY-MM-DD. "
+        "Optional."
+    ),
 )
 @click.pass_context
 def update_track_network_from_rekordbox_histories(
