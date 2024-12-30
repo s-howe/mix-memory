@@ -2,7 +2,7 @@
 
 ## Intro
 
-Mix Memory is a proof-of-concept feature suggestion for AlphaTheta's Rekordbox software, 
+`mix-memory` is a proof-of-concept feature suggestion for AlphaTheta's Rekordbox software, 
 developed in Python and visualized using d3.js.
 
 The idea is to provide DJs with a tool to store and recall successful track transitions, 
@@ -35,6 +35,31 @@ commands by running
 
 ``` sh
 mix-memory --help
+```
+
+### Loading from Rekordbox histories
+
+A track network can be loaded from Rekordbox history playlists.
+
+1. Export all relevant history playlists from Rekordbox in `.m3u8` format. Save or copy
+these to a directory in this project e.g. `./rekordbox_histories`.
+2. If there is no existing library or track network in the database, or if you wish to 
+overwrite an existing track network, run the following command. Optionally supply a 
+minimum date to read from in the format YYYY-MM-DD.
+
+``` sh
+mix-memory load-track-network-from-rekordbox-histories --min-date {min_date}
+```
+
+`mix-memory` will survey you on each transition in the history playlists, giving you the
+option to save good transitions for future reference.
+
+3. If there is an existing library or track network in the database, and you wish to
+update this with new track transitions, run the following command. Use the minimum
+date argument to only transitions from new playlists into the track network.
+
+``` sh
+mix-memory update-track-network-from-rekordbox-histories --min-date {min_date}
 ```
 
 ## Examples
