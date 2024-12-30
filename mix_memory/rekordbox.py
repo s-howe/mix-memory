@@ -38,7 +38,18 @@ class RekordboxHistoryM3UFile:
         # Extract variables from regex groups
         date_str = match.group(1)
         self.date = datetime.strptime(date_str, "%Y-%m-%d").date()
-        self.date_file_number = match.group(3) if match.group(3) else 0
+        self.date_file_number = int(match.group(3) or 0)
+
+    def __repr__(self) -> str:
+        return (
+            f"RekordboxHistoryM3UFile("
+            f"path={self.path!r}, "
+            f"date={self.date}, "
+            f"date_file_number={self.date_file_number})"
+        )
+
+    def __str__(self) -> str:
+        return f"{self.name} (Date: {self.date}, File #: {self.date_file_number})"
 
 
 # TODO: update repr and str
@@ -82,13 +93,20 @@ class RekordboxHistoryPlaylist(Library):
         )
 
     def transitions(self) -> list[tuple[Track]]:
-        """Because a Rekordbox history playlist is ordered by the track play time, it
-        can be used as a record of all the transitions a DJ made during a set."""
+        """Returns a list of track-to-track transitions from the history playlist."""
         tracks = self.tracks()
 
         # Construct the list of transitions by pairing each track to the next
         transitions = [(tracks[i], tracks[i + 1]) for i, _ in enumerate(tracks[:-1])]
         return transitions
+
+    def __repr__(self) -> str:
+        return f"RekordboxHistoryPlaylist(name={self.name!r}, date={self.date}, tracks={len(self.track_map)})"
+
+    def __str__(self) -> str:
+        return (
+            f"Playlist: {self.name} | Date: {self.date} | Tracks: {len(self.track_map)}"
+        )
 
 
 def load_rekordbox_histories_since(
@@ -124,9 +142,7 @@ def load_rekordbox_histories_since(
         )
 
     # Sort files by date and file number
-    rekordbox_history_files = sorted(
-        rekordbox_history_files, key=lambda f: str(f.date) + str(f.date_file_number)
-    )
+    rekordbox_history_files.sort(key=lambda f: (f.date, f.date_file_number))
 
     playlists = [
         RekordboxHistoryPlaylist.from_m3u_file(f.path) for f in rekordbox_history_files
