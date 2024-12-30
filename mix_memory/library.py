@@ -1,3 +1,4 @@
+import hashlib
 from pathlib import Path
 
 
@@ -13,7 +14,8 @@ class Track:
         self.title = title
 
         # A simple 8-digit hash to use as a track ID
-        self.hash8 = abs(hash(self)) % (10**8)
+        hash_input = str(self.__key).encode("utf-8")
+        self.hash8 = int(hashlib.md5(hash_input).hexdigest()[:8], 16)
 
     def __repr__(self) -> str:
         return f"Track(artist={self.artist}, title={self.title})"
@@ -31,7 +33,7 @@ class Track:
         raise NotImplementedError
 
     def __hash__(self) -> int:
-        return hash(self.__key)
+        return self.hash8
 
 
 class MissingTrackError(Exception):
