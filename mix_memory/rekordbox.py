@@ -1,7 +1,10 @@
 from datetime import datetime, date
 from pathlib import Path
 import re
-from mix_memory.library import Library, Track, merge_libraries
+from mix_memory.library import Library, Track
+
+
+__all__ = ["RekordboxHistoryPlaylist", "load_rekordbox_histories_since"]
 
 
 class RekordboxHistoryM3UFile:
