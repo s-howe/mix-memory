@@ -32,9 +32,9 @@ class DuplicateTrackError(Exception):
     pass
 
 
-class Library:
-    """A collection of music tracks. Tracks are stored in a dictionary with track IDs
-    as keys."""
+class Library(MutableMapping):
+    """A collection of music tracks. Tracks are stored in a mapping with track IDs as
+    keys."""
 
     def __init__(self, track_map: dict[int, Track] | None) -> None:
         """Initialize the Library object.
@@ -71,23 +71,32 @@ class Library:
 
         return cls.from_track_list(track_list=track_list)
 
-    def __repr__(self) -> str:
-        return f"Library({len(self.track_map)} Tracks)"
+    def __len__(self) -> int:
+        return len(self.track_map)
 
-    def __str__(self) -> str:
-        return self.__repr__()
+    def __setitem__(self, key, value):
+        if not isinstance(value, Track):
+            raise TypeError("Value must be a Track")
+        self.track_map[key] = value
 
     def __getitem__(self, id) -> Track:
         return self.track_map[id]
 
-    def __len__(self) -> int:
-        return len(self.track_map)
+    def __delitem__(self, key):
+        if key not in self.keys():
+            raise MissingTrackError("")
+        del self.track_map[key]
+
+    def __iter__(self):
+        return iter(self.track_map)
 
     def tracks(self) -> list[Track]:
-        return list(self.track_map.values())
+        """Alias for values(). Returns all tracks in the library."""
+        return list(self.values())
 
     def track_ids(self) -> list[int]:
-        return list(self.track_map.keys())
+        """Alias for keys(). Returns all track IDs in the library."""
+        return list(self.keys())
 
     def add_track(self, track: Track) -> None:
         """Add a track to the library.
@@ -98,22 +107,11 @@ class Library:
         Raises:
             DuplicateTrackError: if track already exists in library.
         """
-        if track in self.track_map.values():
+        if track in self.values():
             raise DuplicateTrackError(f"Track already exists in library: {track}")
 
         track_id = track.hash8
-        self.track_map[track_id] = track
-
-    def remove_track_by_id(self, track_id: int) -> None:
-        """Remove a track from the library by its ID.
-
-        Raises:
-            MissingTrackError: if track ID does not exist in the library.
-        """
-        if track_id not in self.track_map.keys():
-            raise MissingTrackError(f"Track ID not in library: {track_id}")
-
-        del self.track_map[track_id]
+        self[track_id] = track
 
     def remove_track(self, track: Track) -> None:
         """Remove a track from the library.
@@ -134,12 +132,13 @@ class Library:
         Raises:
             MissingTrackError: if track artist and title doe not exist in library.
         """
-        for track_id, track in self.track_map.items():
+        for track_id, track in self.items():
             if track.artist == artist and track.title == title:
                 return track_id
         else:
-            t = Track(artist, title)
-            raise MissingTrackError(f"Track does not exist in library: {t}")
+            raise MissingTrackError(
+                f"Track does not exist in library: {Track(artist, title)}"
+            )
 
     def get_track_id_from_track(self, track: Track) -> int:
         """Get the track ID from a track object."""
@@ -148,7 +147,7 @@ class Library:
         )
 
     def extend(self, other: "Library") -> "Library":
-        """Merges one library with another library."""
+        """Merge this library with another library. Returns a new library."""
         merged_track_map = self.track_map.copy()
         merged_track_map.update(other.track_map)
         return Library(track_map=merged_track_map)
