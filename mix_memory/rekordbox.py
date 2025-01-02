@@ -93,10 +93,10 @@ class RekordboxHistoryPlaylist(Library):
 
     def transitions(self) -> list[tuple[Track]]:
         """Returns a list of track-to-track transitions from the history playlist."""
-        tracks = self.tracks()
-
         # Construct the list of transitions by pairing each track to the next
-        transitions = [(tracks[i], tracks[i + 1]) for i, _ in enumerate(tracks[:-1])]
+        transitions = [
+            (self.tracks[i], self.tracks[i + 1]) for i, _ in enumerate(self.tracks[:-1])
+        ]
         return transitions
 
     def __repr__(self) -> str:
