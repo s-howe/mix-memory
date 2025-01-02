@@ -90,10 +90,12 @@ class Library(MutableMapping):
     def __iter__(self):
         return iter(self.track_map)
 
+    @property
     def tracks(self) -> list[Track]:
         """Alias for values(). Returns all tracks in the library."""
         return list(self.values())
 
+    @property
     def track_ids(self) -> list[int]:
         """Alias for keys(). Returns all track IDs in the library."""
         return list(self.keys())
@@ -120,7 +122,7 @@ class Library(MutableMapping):
             MissingTrackError: if track does not exist in the library.
         """
         track_id = self.get_track_id_from_track(track)
-        self.remove_track_by_id(track_id=track_id)
+        del self[track_id]
 
     def get_track(self, track_id: int) -> Track:
         """Get a track from the library."""
