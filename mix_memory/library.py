@@ -52,7 +52,8 @@ class Library:
         """Initialize the Library object.
 
         Args:
-            track_hashmap: a dictionary with track IDs mapped to Track objects.
+            track_map: a dictionary with track IDs mapped to Track objects. If None,
+                the library will be empty.
         """
         if track_map is None:
             track_map = {}
