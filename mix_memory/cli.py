@@ -1,9 +1,16 @@
+from pathlib import Path
+from datetime import datetime
+
 import click
 
-from mix_memory.library import Track
-from mix_memory.database import Database, LibraryData, ConnectionsData
-from mix_memory.track_network import TrackNetwork
 from mix_memory.d3_network_data import D3NetworkData
+from mix_memory.database import Database, LibraryData, ConnectionsData
+from mix_memory.library import Track, merge_libraries
+from mix_memory.track_network import TrackNetwork
+from mix_memory.rekordbox import (
+    load_rekordbox_histories_since,
+    RekordboxHistoryPlaylist,
+)
 
 
 def load_track_network_from_db(db_name: str) -> TrackNetwork:
@@ -43,7 +50,7 @@ def cli(ctx: click.Context, db_name: str):
     "--force", is_flag=True, help="Force recreation without asking for confirmation."
 )
 @click.pass_context
-def initdb(ctx: click.Context, force: bool) -> None:
+def init_db(ctx: click.Context, force: bool) -> None:
     """Drop existing database and recreate with empty tables."""
     db_name = ctx.obj["db_name"]
 
@@ -103,10 +110,9 @@ def add_connection(
 @click.argument("track_artist")
 @click.argument("track_title")
 @click.pass_context
-def recommend_next_tracks(
-    ctx: click.Context, track_artist: str, track_title: str
-) -> None:
-    """Recommend the next tracks from a given track based on saved transitions."""
+def next_track_options(ctx: click.Context, track_artist: str, track_title: str) -> None:
+    """Recommend options for the next track from a given track based on saved
+    transitions."""
     db_name = ctx.obj["db_name"]
     track_network = load_track_network_from_db(db_name)
 
@@ -146,3 +152,107 @@ def export_network_for_d3(ctx: click.Context, output_file: str) -> None:
     track_network = load_track_network_from_db(db_name)
     D3NetworkData.from_track_network(track_network).to_json(file_path=output_file)
     click.echo(f"Track network exported to {output_file}")
+
+
+@cli.command()
+@click.option(
+    "--rekordbox-histories-dir",
+    default="./rekordbox_histories",
+    show_default=True,
+    help="The directory from which Rekordbox history exported as .m3u8 files should be read.",
+)
+@click.option(
+    "--min-date",
+    type=click.DateTime(formats=["%Y-%m-%d"]),
+    help=(
+        "The minimum date to read Rekordbox history playlists from. Format YYYY-MM-DD. "
+        "Optional."
+    ),
+)
+@click.pass_context
+def load_track_network_from_rekordbox_histories(
+    ctx: click.Context, rekordbox_histories_dir: str, min_date: datetime.date
+) -> None:
+    """Loads the library from a directory of Rekordbox history playlist .m3u8 exports.
+    A survey is then carried out for the user to mark good transitions. These
+    transitions are then used to create a track network. The network can then be saved
+    to the database."""
+    db_name = ctx.obj["db_name"]
+    playlists = load_rekordbox_histories_since(
+        rekordbox_histories_dir=Path(rekordbox_histories_dir), min_date=min_date
+    )
+
+    library = merge_libraries(playlists)
+    track_network = TrackNetwork.from_library(library)
+
+    click.echo(f"Loaded {len(playlists)} playlists into library.")
+
+    _add_connections_from_playlists(track_network, playlists, db_name)
+
+
+@cli.command()
+@click.option(
+    "--rekordbox-histories-dir",
+    default="./rekordbox_histories",
+    show_default=True,
+    help="The directory from which Rekordbox history exported as .m3u8 files should be read.",
+)
+@click.option(
+    "--min-date",
+    type=click.DateTime(formats=["%Y-%m-%d"]),
+    help=(
+        "The minimum date to read Rekordbox history playlists from. Format YYYY-MM-DD. "
+        "Optional."
+    ),
+)
+@click.pass_context
+def update_track_network_from_rekordbox_histories(
+    ctx: click.Context, rekordbox_histories_dir: str, min_date: datetime.date
+) -> None:
+    """Updates an existing track network from a directory of Rekordbox history playlist
+    .m3u8 exports. A survey is then carried out for the user to mark good transitions.
+    The updated network can then be saved to the database."""
+    db_name = ctx.obj["db_name"]
+
+    track_network = load_track_network_from_db(db_name)
+
+    playlists = load_rekordbox_histories_since(
+        rekordbox_histories_dir=Path(rekordbox_histories_dir), min_date=min_date
+    )
+
+    library_playlists = merge_libraries(playlists)
+
+    n_tracks_original = len(track_network.library)
+    track_network.library = track_network.library.extend(library_playlists)
+    n_tracks_new = len(track_network.library)
+    click.echo(f"Loaded {n_tracks_new - n_tracks_original} new tracks into library.")
+
+    _add_connections_from_playlists(track_network, playlists, db_name)
+
+
+def _add_connections_from_playlists(
+    track_network: TrackNetwork, playlists: list[RekordboxHistoryPlaylist], db_name: str
+) -> None:
+    """Surveys the user about each transition in a list of Rekordbox history playlists.
+    Good transitions are saved to the track network. The track network can then be saved
+    to the database."""
+    for playlist in playlists:
+        click.echo(
+            click.echo(
+                f"\n=== Transitions Survey: {playlist.name} ===\n"
+                "Mark good transitions for each suggested pair.\n"
+                "Type 'y' for Yes, 'n' for No, or 'Ctrl+C' to exit."
+            )
+        )
+        for start_track, end_track in playlist.transitions():
+            if click.confirm(f"{start_track} -> {end_track}?"):
+                source_track_id = track_network.library.get_track_id_from_track(
+                    start_track
+                )
+                target_track_id = track_network.library.get_track_id_from_track(
+                    end_track
+                )
+                track_network.add_connection(source_track_id, target_track_id)
+
+    if click.confirm(f"Save network to database {db_name}?"):
+        save_track_network_to_db(track_network, db_name)
