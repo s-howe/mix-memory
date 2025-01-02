@@ -18,7 +18,7 @@ class Track(NamedTuple):
         """A simple 8-digit hash to use as a track ID."""
         key = (self.artist, self.title)
         hash_input = str(key).encode("utf-8")
-        self.hash8 = int(hashlib.md5(hash_input).hexdigest()[:8], 16)
+        return int(hashlib.md5(hash_input).hexdigest()[:8], 16)
 
     def __str__(self) -> str:
         return f"{self.artist} - {self.title}"
