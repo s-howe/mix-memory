@@ -2,7 +2,7 @@ from pathlib import Path
 import sqlite3
 
 from mix_memory.library import Library, Track
-from mix_memory.track_network import TrackIdConnections
+from mix_memory.track_network import TrackIdConnection
 
 
 __all__ = ["Database", "LibraryData", "ConnectionsData"]
@@ -85,7 +85,9 @@ class ConnectionsData(DBData):
     table_name = "connections"
 
     @classmethod
-    def from_connections(cls, connections: TrackIdConnections) -> "ConnectionsData":
+    def from_connections(
+        cls, connections: list[TrackIdConnection]
+    ) -> "ConnectionsData":
         rows = [
             {
                 "source_track_id": source_track_id,
@@ -95,10 +97,13 @@ class ConnectionsData(DBData):
         ]
         return cls(rows=rows)
 
-    def to_connections(self) -> TrackIdConnections:
-        return TrackIdConnections(
-            [(row["source_track_id"], row["target_track_id"]) for row in self.rows]
-        )
+    def to_connections(self) -> list[TrackIdConnection]:
+        return [
+            TrackIdConnection(
+                source=row["source_track_id"], target=row["target_track_id"]
+            )
+            for row in self.rows
+        ]
 
     def to_sqlite(self, database) -> None:
         cur = sqlite3.connect(database.name).cursor()
