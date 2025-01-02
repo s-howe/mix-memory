@@ -1,39 +1,27 @@
+from collections.abc import MutableMapping
 import hashlib
 from pathlib import Path
+from typing import NamedTuple
 
 
 __all__ = ["Track", "Library"]
 
 
-class Track:
+class Track(NamedTuple):
     """A music track."""
 
-    def __init__(self, artist: str, title: str) -> None:
-        """Initialize the Track object."""
-        self.artist = artist
-        self.title = title
+    artist: str
+    title: str
 
-        # A simple 8-digit hash to use as a track ID
-        hash_input = str(self.__key).encode("utf-8")
+    @property
+    def hash8(self):
+        """A simple 8-digit hash to use as a track ID."""
+        key = (self.artist, self.title)
+        hash_input = str(key).encode("utf-8")
         self.hash8 = int(hashlib.md5(hash_input).hexdigest()[:8], 16)
-
-    def __repr__(self) -> str:
-        return f"Track(artist={self.artist}, title={self.title})"
 
     def __str__(self) -> str:
         return f"{self.artist} - {self.title}"
-
-    @property
-    def __key(self) -> str:
-        return (self.artist, self.title)
-
-    def __eq__(self, other: "Track") -> bool:
-        if isinstance(other, Track):
-            return self.__key == other.__key
-        raise NotImplementedError
-
-    def __hash__(self) -> int:
-        return self.hash8
 
 
 class MissingTrackError(Exception):
