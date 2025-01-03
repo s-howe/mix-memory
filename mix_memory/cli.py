@@ -2,6 +2,9 @@ from pathlib import Path
 from datetime import datetime
 
 import click
+from rich.console import Console
+from rich.table import Table
+from rich.prompt import Confirm
 
 from mix_memory.d3_network_data import D3NetworkData
 from mix_memory.database import Database, LibraryData, ConnectionsData
@@ -11,6 +14,9 @@ from mix_memory.rekordbox import (
     load_rekordbox_histories_since,
     RekordboxHistoryPlaylist,
 )
+
+
+console = Console()
 
 
 def load_track_network_from_db(db_name: str) -> TrackNetwork:
@@ -55,12 +61,13 @@ def init_db(ctx: click.Context, force: bool) -> None:
     db_name = ctx.obj["db_name"]
 
     if not force:
-        click.confirm(
-            f"Are you sure you want to reset the database {db_name}?", abort=True
-        )
+        if not Confirm.ask(
+            f"[yellow]Are you sure you want to reset the database {db_name}?[/yellow]"
+        ):
+            raise click.Abort()
 
     Database(name=db_name).create_tables()
-    click.echo(f"Database {db_name} has been recreated.")
+    console.print(f"Database [green]{db_name}[/green] has been recreated.")
 
 
 @cli.command()
@@ -100,9 +107,9 @@ def add_connection(
     save_track_network_to_db(track_network, db_name)
 
     conn_str = " <-> " if bidirectional else " -> "
-    click.echo(
-        f"Connection added: '{source_track_artist} - {source_track_title}'{conn_str}"
-        f"'{target_track_artist} - {target_track_title}'"
+    console.print(
+        f"Connection added: [green]{source_track_artist} - {source_track_title}[/green]{conn_str}"
+        f"[green]{target_track_artist} - {target_track_title}[/green]"
     )
 
 
@@ -130,12 +137,16 @@ def next_track_options(ctx: click.Context, track_artist: str, track_title: str) 
     ]
 
     if possible_next_tracks:
-        click.echo(
-            f"After playing {now_playing_track}, consider playing: "
-            f"{', '.join(str(t) for t in possible_next_tracks)}"
-        )
+        table = Table(title=f"Recommendations for {now_playing_track}")
+        table.add_column("Artist", style="cyan", no_wrap=True)
+        table.add_column("Title", style="magenta", no_wrap=True)
+
+        for track in possible_next_tracks:
+            table.add_row(track.artist, track.title)
+
+        console.print(table)
     else:
-        click.echo(f"No recommendations found for {now_playing_track}.")
+        console.print(f"[red]No recommendations found for {now_playing_track}.[/red]")
 
 
 @cli.command()
@@ -151,7 +162,7 @@ def export_network_for_d3(ctx: click.Context, output_file: str) -> None:
     db_name = ctx.obj["db_name"]
     track_network = load_track_network_from_db(db_name)
     D3NetworkData.from_track_network(track_network).to_json(file_path=output_file)
-    click.echo(f"Track network exported to {output_file}")
+    console.print(f"Track network exported to [green]{output_file}[/green]")
 
 
 @cli.command()
@@ -185,7 +196,7 @@ def load_track_network_from_rekordbox_histories(
     library = merge_libraries(playlists)
     track_network = TrackNetwork.from_library(library)
 
-    click.echo(f"Loaded {len(playlists)} playlists into library.")
+    console.print(f"Loaded {len(playlists)} playlists into library.")
 
     _add_connections_from_playlists(track_network, playlists, db_name)
 
@@ -225,7 +236,7 @@ def update_track_network_from_rekordbox_histories(
     n_tracks_original = len(track_network.library)
     track_network.library = track_network.library.extend(library_playlists)
     n_tracks_new = len(track_network.library)
-    click.echo(f"Loaded {n_tracks_new - n_tracks_original} new tracks into library.")
+    console.print(f"Loaded {n_tracks_new - n_tracks_original} new tracks into library.")
 
     _add_connections_from_playlists(track_network, playlists, db_name)
 
@@ -237,15 +248,15 @@ def _add_connections_from_playlists(
     Good transitions are saved to the track network. The track network can then be saved
     to the database."""
     for playlist in playlists:
-        click.echo(
-            click.echo(
-                f"\n=== Transitions Survey: {playlist.name} ===\n"
-                "Mark good transitions for each suggested pair.\n"
-                "Type 'y' for Yes, 'n' for No, or 'Ctrl+C' to exit."
-            )
+        console.print(
+            f"\n[bold magenta]=== Transitions Survey: {playlist.name} ===[/bold magenta]\n"
+            "Mark good transitions for each suggested pair.\n"
+            "Type 'y' for Yes, 'n' for No, or 'Ctrl+C' to exit."
         )
         for start_track, end_track in playlist.transitions():
-            if click.confirm(f"{start_track} -> {end_track}?"):
+            if Confirm.ask(
+                f"[yellow]{start_track}[/yellow] -> [yellow]{end_track}[/yellow]?"
+            ):
                 source_track_id = track_network.library.get_track_id_from_track(
                     start_track
                 )
@@ -254,5 +265,5 @@ def _add_connections_from_playlists(
                 )
                 track_network.add_connection(source_track_id, target_track_id)
 
-    if click.confirm(f"Save network to database {db_name}?"):
+    if Confirm.ask(f"Save network to database [yellow]{db_name}[/yellow]?"):
         save_track_network_to_db(track_network, db_name)
