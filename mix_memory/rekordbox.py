@@ -52,11 +52,10 @@ class RekordboxHistoryM3UFile:
         return f"{self.name} (Date: {self.date}, File #: {self.date_file_number})"
 
 
-# TODO: update repr and str
 class RekordboxHistoryPlaylist(Library):
     """A library specifically representing the tracks in a Rekordbox history
     playlist. Because a Rekordbox history playlist is ordered by the track play time,
-    it serves as a good record of all the transitions a DJ made during a certain set."""
+    it can be used as a record of all the transitions a DJ made during a certain set."""
 
     def __init__(
         self,
@@ -82,7 +81,7 @@ class RekordboxHistoryPlaylist(Library):
 
         library = Library.from_m3u_file(file_path=file_path)
 
-        # Load other metadata from the file e.g. the date
+        # Load other metadata from the file name e.g. the date
         file = RekordboxHistoryM3UFile(file_path=file_path)
 
         return cls(
@@ -94,19 +93,17 @@ class RekordboxHistoryPlaylist(Library):
 
     def transitions(self) -> list[tuple[Track]]:
         """Returns a list of track-to-track transitions from the history playlist."""
-        tracks = self.tracks()
-
         # Construct the list of transitions by pairing each track to the next
-        transitions = [(tracks[i], tracks[i + 1]) for i, _ in enumerate(tracks[:-1])]
+        transitions = [
+            (self.tracks[i], self.tracks[i + 1]) for i, _ in enumerate(self.tracks[:-1])
+        ]
         return transitions
 
     def __repr__(self) -> str:
-        return f"RekordboxHistoryPlaylist(name={self.name!r}, date={self.date}, tracks={len(self.track_map)})"
+        return f"RekordboxHistoryPlaylist(name={self.name!r}, date={self.date}, tracks={len(self)})"
 
     def __str__(self) -> str:
-        return (
-            f"Playlist: {self.name} | Date: {self.date} | Tracks: {len(self.track_map)}"
-        )
+        return f"Playlist: {self.name} | Date: {self.date} | Tracks: {len(self)}"
 
 
 def load_rekordbox_histories_since(
