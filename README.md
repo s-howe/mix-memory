@@ -83,7 +83,7 @@ Both of these commands will prompt a survey with which you can save good transit
 from each history playlist, like so:
 
 ```
-$ mix-memory update-track-network-from-rekordbox-histories --min-date {min_date}
+$ mix-memory update-track-network-from-rekordbox-histories --min-date "2024-10-01"
 
 === Transitions Survey: HISTORY 2024-10-26.m3u8 ===
 Mark good transitions for each suggested pair.
