@@ -71,6 +71,19 @@ def init_db(ctx: click.Context, force: bool) -> None:
 
 
 @cli.command()
+@click.argument("artist")
+@click.argument("title")
+@click.pass_context
+def add_track(ctx: click.Context, artist: str, title: str) -> None:
+    db_name = ctx.obj["db_name"]
+    track_network = load_track_network_from_db(db_name)
+    track = Track(artist, title)
+    track_network.library.add_track(track)
+    save_track_network_to_db(track_network, db_name)
+    console.print(f"Track added to library: [green]{track}[/green]")
+
+
+@cli.command()
 @click.argument("source_track_artist")
 @click.argument("source_track_title")
 @click.argument("target_track_artist")
