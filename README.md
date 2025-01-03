@@ -24,8 +24,8 @@ bidirectional (mixing in both directions works well).
 
 To install the Python package and CLI, run
 
-``` sh
-pip install .
+``` console
+$ pip install .
 ```
 
 ## Command Line Interface
@@ -83,6 +83,8 @@ Both of these commands will prompt a survey with which you can save good transit
 from each history playlist, like so:
 
 ```
+$ mix-memory update-track-network-from-rekordbox-histories --min-date {min_date}
+
 === Transitions Survey: HISTORY 2024-10-26.m3u8 ===
 Mark good transitions for each suggested pair.
 Type 'y' for Yes, 'n' for No, or 'Ctrl+C' to exit.
