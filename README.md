@@ -24,8 +24,8 @@ bidirectional (mixing in both directions works well).
 
 To install the Python package and CLI, run
 
-``` sh
-pip install .
+``` console
+$ pip install .
 ```
 
 ## Command Line Interface
@@ -33,8 +33,24 @@ pip install .
 All functions of mix-memory are exposed via a command-line interface. See the various
 commands by running
 
-``` sh
-mix-memory --help
+``` console
+$ mix-memory --help
+```
+
+Example output for displaying the next track options from a now-playing
+track:
+
+``` console
+$ mix-memory next-track-options OCH Whalesong
+
+     Recommendations for OCH - Whalesong      
+┏━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Artist    ┃ Title                          ┃
+┡━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ Leftfield │ Not forgotten (Hard Hands Mix) │
+│ Pizarro   │ Five Tones                     │
+│ Pizarro   │ Release Me                     │
+└───────────┴────────────────────────────────┘                        
 ```
 
 ### Loading from Rekordbox histories
@@ -47,8 +63,8 @@ these to a directory in this project e.g. `./rekordbox_histories`.
 overwrite an existing track network, run the `load-track-network-from-rekordbox-histories`
 command. Optionally supply a minimum date to read from in the format YYYY-MM-DD.
 
-``` sh
-mix-memory load-track-network-from-rekordbox-histories --min-date {min_date}
+```console
+$ mix-memory load-track-network-from-rekordbox-histories --min-date {min_date}
 ```
 
 `mix-memory` will survey you on each transition in the history playlists, giving you the
@@ -59,14 +75,16 @@ update this with new track transitions, run the `update-track-network-from-rekor
 command. Use the minimum date argument to only transitions from new playlists into the
 track network.
 
-``` sh
-mix-memory update-track-network-from-rekordbox-histories --min-date {min_date}
+``` console
+$ mix-memory update-track-network-from-rekordbox-histories --min-date {min_date}
 ```
 
 Both of these commands will prompt a survey with which you can save good transitions
 from each history playlist, like so:
 
 ```
+$ mix-memory update-track-network-from-rekordbox-histories --min-date "2024-10-01"
+
 === Transitions Survey: HISTORY 2024-10-26.m3u8 ===
 Mark good transitions for each suggested pair.
 Type 'y' for Yes, 'n' for No, or 'Ctrl+C' to exit.
